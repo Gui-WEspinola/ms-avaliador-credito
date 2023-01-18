@@ -1,15 +1,13 @@
 package io.github.guiwespinola.msavaliadorcredito.application;
 
-import io.github.guiwespinola.msavaliadorcredito.application.exception.ClientDataNotFoundException;
 import io.github.guiwespinola.msavaliadorcredito.application.exception.CommunicationErrorException;
-import io.github.guiwespinola.msavaliadorcredito.domain.model.CustomerStatus;
+import io.github.guiwespinola.msavaliadorcredito.application.exception.CustomerDataNotFoundException;
+import io.github.guiwespinola.msavaliadorcredito.domain.model.CustomerRatingRequest;
+import io.github.guiwespinola.msavaliadorcredito.domain.model.CustomerRatingResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("credit-rating")
@@ -28,7 +26,19 @@ public class CreditRatingController {
         try {
             var status = ratingService.getClientStatus(cpf);
             return ResponseEntity.ok(status);
-        } catch (ClientDataNotFoundException e) {
+        } catch (CustomerDataNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (CommunicationErrorException e) {
+            return ResponseEntity.status(HttpStatus.resolve(e.getStatus())).body(e.getMessage());
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity rateCredit(@RequestBody CustomerRatingRequest customerData) {
+        try {
+            CustomerRatingResponse ratingResponse = ratingService.customerCreditRating(customerData.getCpf(), customerData.getIncome());
+            return ResponseEntity.ok(ratingResponse);
+        } catch (CustomerDataNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (CommunicationErrorException e) {
             return ResponseEntity.status(HttpStatus.resolve(e.getStatus())).body(e.getMessage());
