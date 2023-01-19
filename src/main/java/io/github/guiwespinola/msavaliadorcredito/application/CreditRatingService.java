@@ -1,11 +1,13 @@
 package io.github.guiwespinola.msavaliadorcredito.application;
 
 import feign.FeignException;
+import io.github.guiwespinola.msavaliadorcredito.application.exception.CardRequestProtocolErrorException;
 import io.github.guiwespinola.msavaliadorcredito.application.exception.CommunicationErrorException;
 import io.github.guiwespinola.msavaliadorcredito.application.exception.CustomerDataNotFoundException;
 import io.github.guiwespinola.msavaliadorcredito.clients.CardsResourceClient;
 import io.github.guiwespinola.msavaliadorcredito.clients.CustomerResourceClient;
 import io.github.guiwespinola.msavaliadorcredito.domain.model.*;
+import io.github.guiwespinola.msavaliadorcredito.infra.mqueue.RequestCardPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,8 @@ public class CreditRatingService {
 
     private final CustomerResourceClient customerResourceClient;
     private final CardsResourceClient cardsResourceClient;
+
+    private final RequestCardPublisher requestCardPublisher;
 
     public CustomerStatus getClientStatus(String cpf)
             throws CustomerDataNotFoundException, CommunicationErrorException {
@@ -72,6 +77,16 @@ public class CreditRatingService {
                 throw new CustomerDataNotFoundException();
             }
             throw new CommunicationErrorException(e.getMessage(), e.status());
+        }
+    }
+
+    public CardRequestProtocol issueNewCard(CardRequestData data) {
+        try {
+            requestCardPublisher.cardRequest(data);
+            var protocol = UUID.randomUUID().toString();
+            return new CardRequestProtocol(protocol); // a aplicação deve retornar um número de protocolo
+        } catch (Exception e) {
+            throw new CardRequestProtocolErrorException(e.getMessage());
         }
     }
 }

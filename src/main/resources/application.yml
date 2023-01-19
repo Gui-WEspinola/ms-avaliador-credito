@@ -1,6 +1,11 @@
 spring:
   application:
     name: msavaliadorcredito
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 server:
   port: 0
@@ -13,4 +18,8 @@ eureka:
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value} }
 
 #defaultZone referencia a URL do discovery server
-#instance-id: permite a criação de um id aleatório para a aplicação
+#instance-id: permite a criacao de um id aleatorio para a aplicacao
+
+mq:
+  queues:
+    issue-card: issue-card
